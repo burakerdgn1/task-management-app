@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Set;
+
 
 @Entity
 @Data
@@ -20,12 +22,9 @@ public class User {
   @Column(nullable = false, unique = true)
   private String username;
 
-
   @Column(nullable = false)
   private String password;
 
-
-  /*
   @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
   private Set<Task> tasks;
 
@@ -34,7 +33,7 @@ public class User {
 
   @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
   private Set<UserProject> userProjects;
-   */
+
 }
 
 
