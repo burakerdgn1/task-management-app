@@ -21,5 +21,13 @@ public class Team {
   @OneToMany(mappedBy = "team")
   private List<UserTeam> userTeams;
    */
+
+  /*
+  @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
+  private Set<Task> tasks;
+
+  @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
+  private Set<Project> projects;
+   */
 }
 
