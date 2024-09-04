@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface UserTeamService {
-  UserTeam addUserToTeam(UserTeam userTeam);
+  void addUserToTeam(Long userId, Long teamId);
 
   Optional<UserTeam> findUserTeamById(Long id);
 
