@@ -16,6 +16,6 @@ public interface ProjectService {
 
   void deleteProject(Long id);
 
-  void addProjectToTeam(Long projectId, Long teamId);
+  void addTeamToProject(Long teamId, Long projectId,Long userId);
 }
 

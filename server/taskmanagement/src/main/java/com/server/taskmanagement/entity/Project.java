@@ -25,6 +25,10 @@ public class Project {
   @JoinColumn(name = "team_id", nullable = false)
   private Team team;
 
+  @ManyToOne
+  @JoinColumn(name = "creator_id", nullable = false)
+  private User creator;
+
   @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
   private Set<Task> tasks;
 

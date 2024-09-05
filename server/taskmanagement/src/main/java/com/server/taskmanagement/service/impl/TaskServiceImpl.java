@@ -3,9 +3,13 @@ package com.server.taskmanagement.service.impl;
 
 import com.server.taskmanagement.entity.Project;
 import com.server.taskmanagement.entity.Task;
+import com.server.taskmanagement.entity.User;
+import com.server.taskmanagement.repository.ProjectRepository;
 import com.server.taskmanagement.repository.TaskRepository;
+import com.server.taskmanagement.repository.UserRepository;
 import com.server.taskmanagement.service.interfaces.ProjectService;
 import com.server.taskmanagement.service.interfaces.TaskService;
+import com.server.taskmanagement.service.interfaces.TeamService;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,6 +25,12 @@ public class TaskServiceImpl implements TaskService {
   private final ProjectService projectService;
 
   private final TaskRepository taskRepository;
+
+  private final ProjectRepository projectRepository;
+
+  private final UserRepository userRepository;
+
+  private final TeamService teamService;
 
   @Override
   public Task createTask(Task task) {
@@ -58,20 +68,45 @@ public class TaskServiceImpl implements TaskService {
     taskRepository.deleteById(id);
   }
 
-  @Override
   @Transactional
-  public void addTaskToProject(Long taskId, Long projectId) {
-    Task task = taskRepository.findById(taskId)
+  public Task createTaskForProject(Long projectId, Task task, Long userId) {
+    Project project = projectRepository.findById(projectId)
       .orElseThrow(
-        //() -> new TaskNotFoundException("Task not found with id: " + taskId)
-      );
-    Project project = projectService.findProjectById(projectId)
-      .orElseThrow(
-        //() -> new ProjectNotFoundException("Project not found with id: " + projectId)
+        //() -> new ProjectNotFoundException("Project not found")
       );
 
+    if (!project.getCreator().getId().equals(userId)) {
+      //throw new UnauthorizedActionException("Only the project creator can add tasks");
+    }
+
     task.setProject(project);
+    return taskRepository.save(task);
+  }
+
+  @Transactional
+  public void assignTaskToUser(Long taskId, Long userId, Long assignerId) {
+    Task task = taskRepository.findById(taskId)
+      .orElseThrow(
+        //() -> new TaskNotFoundException("Task not found")
+      );
+
+    if (!task.getProject().getCreator().getId().equals(assignerId)) {
+      //throw new UnauthorizedActionException("Only the project creator can assign tasks");
+    }
+
+    User user = userRepository.findById(userId)
+      .orElseThrow(
+        //() -> new UserNotFoundException("User not found")
+      );
+
+    if (!teamService.isUserPartOfTeam(userId, task.getProject().getTeam().getId())) {
+      //throw new UnauthorizedActionException("User is not part of the project team");
+    }
+
+    task.setUser(user);
     taskRepository.save(task);
   }
+
+
 }
 
