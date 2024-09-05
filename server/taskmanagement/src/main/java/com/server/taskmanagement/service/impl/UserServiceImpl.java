@@ -23,7 +23,7 @@ public class UserServiceImpl implements UserService {
     return userRepository.save(user);
   }
 
-  /*
+
   @Override
   public User updateUser(Long userId, User user) {
     Optional<User> existingUser = userRepository.findById(userId);
@@ -38,7 +38,7 @@ public class UserServiceImpl implements UserService {
       return null;
     }
   }
-   */
+
 
   @Override
   public Optional<User> findUserById(Long id) {

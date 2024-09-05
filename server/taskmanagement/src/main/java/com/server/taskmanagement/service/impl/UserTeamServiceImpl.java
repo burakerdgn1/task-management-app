@@ -23,7 +23,7 @@ public class UserTeamServiceImpl implements UserTeamService {
 
   @Override
   @Transactional
-  public void addUserToTeam(Long userId, Long teamId) {
+  public void addUserToTeam(Long userId, Long teamId,Long creatorId) {
     User user = userService.findUserById(userId)
       .orElseThrow(
         //() -> new UserNotFoundException("User not found with id: " + userId)
@@ -33,11 +33,13 @@ public class UserTeamServiceImpl implements UserTeamService {
         //() -> new TeamNotFoundException("Team not found with id: " + teamId)
       );
 
-    /*
-    if (userTeamRepository.existsByUserAndTeam(user, team)) {
-      throw new IllegalStateException("User is already a member of the team");
+    if (!team.getCreator().getId().equals(creatorId)) {
+      //throw new RuntimeException("Only the team creator can add users to the team");
     }
-     */
+
+    if (userTeamRepository.existsByUserAndTeam(user, team)) {
+      //throw new IllegalStateException("User is already a member of the team");
+    }
 
     UserTeam userTeam = new UserTeam();
     userTeam.setUser(user);

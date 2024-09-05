@@ -3,6 +3,7 @@ package com.server.taskmanagement.service.impl;
 import com.server.taskmanagement.entity.Project;
 import com.server.taskmanagement.entity.Team;
 import com.server.taskmanagement.repository.ProjectRepository;
+import com.server.taskmanagement.repository.TeamRepository;
 import com.server.taskmanagement.service.interfaces.ProjectService;
 import com.server.taskmanagement.service.interfaces.TeamService;
 import lombok.AllArgsConstructor;
@@ -18,6 +19,7 @@ public class ProjectServiceImpl implements ProjectService {
 
   private final ProjectRepository projectRepository;
   private final TeamService teamService;
+  private final TeamRepository teamRepository;
 
   @Override
   public Project createProject(Project project) {
@@ -53,16 +55,20 @@ public class ProjectServiceImpl implements ProjectService {
     projectRepository.deleteById(id);
   }
 
-  @Override
   @Transactional
-  public void addProjectToTeam(Long projectId, Long teamId) {
+  public void addTeamToProject(Long teamId, Long projectId, Long userId) {
     Project project = projectRepository.findById(projectId)
       .orElseThrow(
-        //() -> new ProjectNotFoundException("Project not found with id: " + projectId)
+        //() -> new ProjectNotFoundException("Project not found")
       );
-    Team team = teamService.findTeamById(teamId)
+
+    if (!project.getCreator().getId().equals(userId)) {
+      //throw new UnauthorizedActionException("Only project creator can assign teams");
+    }
+
+    Team team = teamRepository.findById(teamId)
       .orElseThrow(
-        //() -> new TeamNotFoundException("Team not found with id: " + teamId)
+        //() -> new TeamNotFoundException("Team not found")
       );
 
     project.setTeam(team);
