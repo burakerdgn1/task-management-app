@@ -15,4 +15,6 @@ public interface TaskService {
   Task updateTask(Long id, Task updatedTask);
 
   void deleteTask(Long id);
+
+  void addTaskToProject(Long taskId, Long projectId);
 }
