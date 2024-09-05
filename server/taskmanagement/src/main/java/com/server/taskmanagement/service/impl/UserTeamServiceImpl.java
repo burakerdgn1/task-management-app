@@ -33,8 +33,8 @@ public class UserTeamServiceImpl implements UserTeamService {
         //() -> new TeamNotFoundException("Team not found with id: " + teamId)
       );
 
-    if (!team.getCreator().getId().equals(creatorId)) {
-      //throw new RuntimeException("Only the team creator can add users to the team");
+    if (!isTeamCreator(team, creatorId)) {
+      //throw new UnauthorizedActionException("Only the team creator can add users to the team");
     }
 
     if (userTeamRepository.existsByUserAndTeam(user, team)) {
@@ -60,6 +60,9 @@ public class UserTeamServiceImpl implements UserTeamService {
   @Override
   public void removeUserFromTeam(Long id) {
     userTeamRepository.deleteById(id);
+  }
+  private boolean isTeamCreator(Team team, Long creatorId) {
+    return team.getCreator().getId().equals(creatorId);
   }
 }
 

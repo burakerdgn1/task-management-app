@@ -49,7 +49,8 @@ public class TeamServiceImpl implements TeamService {
     }
 
     team.setCreator(project.getCreator()); // Assign team creator as the project creator
-    team.setProjects(Set.of(project)); // Assign team to project
+    team.getProjects().add(project); // Assign team to project
+    project.setTeam(team);
     return teamRepository.save(team);
   }
 

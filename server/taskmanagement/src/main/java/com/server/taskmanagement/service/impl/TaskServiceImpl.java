@@ -70,14 +70,13 @@ public class TaskServiceImpl implements TaskService {
 
   @Transactional
   public Task createTaskForProject(Long projectId, Task task, Long userId) {
+    if (!isProjectCreator(projectId, userId)) {
+      //throw new UnauthorizedActionException("Only the project creator can add tasks");
+    }
     Project project = projectRepository.findById(projectId)
       .orElseThrow(
         //() -> new ProjectNotFoundException("Project not found")
       );
-
-    if (!project.getCreator().getId().equals(userId)) {
-      //throw new UnauthorizedActionException("Only the project creator can add tasks");
-    }
 
     task.setProject(project);
     return taskRepository.save(task);
@@ -90,7 +89,7 @@ public class TaskServiceImpl implements TaskService {
         //() -> new TaskNotFoundException("Task not found")
       );
 
-    if (!task.getProject().getCreator().getId().equals(assignerId)) {
+    if (!isProjectCreator(task.getProject().getId(), assignerId)) {
       //throw new UnauthorizedActionException("Only the project creator can assign tasks");
     }
 
@@ -105,6 +104,12 @@ public class TaskServiceImpl implements TaskService {
 
     task.setUser(user);
     taskRepository.save(task);
+  }
+
+  private boolean isProjectCreator(Long projectId, Long userId) {
+    return projectRepository.findById(projectId)
+      .map(project -> project.getCreator().getId().equals(userId))
+      .orElse(false);
   }
 
 
