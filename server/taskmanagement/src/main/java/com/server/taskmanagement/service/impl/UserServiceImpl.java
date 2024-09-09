@@ -1,28 +1,33 @@
 package com.server.taskmanagement.service.impl;
-
 import com.server.taskmanagement.entity.User;
 import com.server.taskmanagement.repository.UserRepository;
+import com.server.taskmanagement.security.UserInfoDetails;
 import com.server.taskmanagement.service.interfaces.UserService;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
-@AllArgsConstructor
-@NoArgsConstructor
-public class UserServiceImpl implements UserService {
+public class UserServiceImpl implements UserService, UserDetailsService {
 
+  @Autowired
   private UserRepository userRepository;
+
+  @Autowired
+  private PasswordEncoder encoder;
 
   @Override
   public User createUser(User user) {
-    // Business logic (e.g., check if the username or email is already taken)
+    user.setPassword(encoder.encode(user.getPassword()));
     return userRepository.save(user);
   }
-
 
   @Override
   public User updateUser(Long userId, User user) {
@@ -39,7 +44,6 @@ public class UserServiceImpl implements UserService {
     }
   }
 
-
   @Override
   public Optional<User> findUserById(Long id) {
     return userRepository.findById(id);
@@ -53,6 +57,20 @@ public class UserServiceImpl implements UserService {
   @Override
   public void deleteUser(Long id) {
     userRepository.deleteById(id);
+  }
+
+  @Override
+  public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    Optional<User> user = userRepository.findByUsername(username);
+    if (user.isEmpty()) {
+      throw new UsernameNotFoundException("User not found");
+    }
+
+    // Implement UserDetails directly from your User entity
+    return user.map(UserInfoDetails::new)
+      .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    //return new UserInfoDetails(user.get());
+
   }
 }
 
