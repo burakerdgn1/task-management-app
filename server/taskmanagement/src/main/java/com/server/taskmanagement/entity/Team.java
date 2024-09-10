@@ -21,6 +21,10 @@ public class Team {
   @Column(unique = true, nullable = false)
   private String name;
 
+  @ManyToOne
+  @JoinColumn(name = "creator_id", nullable = false)
+  private User creator;
+
   @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<UserTeam> userTeams;
 
