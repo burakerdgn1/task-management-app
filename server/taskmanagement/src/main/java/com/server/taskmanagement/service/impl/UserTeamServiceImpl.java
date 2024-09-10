@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -45,6 +46,13 @@ public class UserTeamServiceImpl implements UserTeamService {
     userTeam.setUser(user);
     userTeam.setTeam(team);
     userTeamRepository.save(userTeam);
+  }
+
+  public List<Team> getUserTeamsByUserId(Long userId) {
+    return userTeamRepository.findUserTeamsByUserId(userId)
+      .stream()
+      .map(UserTeam::getTeam) // Accesses the Project entity
+      .collect(Collectors.toList());
   }
 
   @Override
