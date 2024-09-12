@@ -4,7 +4,8 @@ import com.server.taskmanagement.repository.UserRepository;
 import com.server.taskmanagement.security.UserInfoDetails;
 import com.server.taskmanagement.service.interfaces.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -14,7 +15,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
-@Service
+@Service("userServiceImpl")
 public class UserServiceImpl implements UserService, UserDetailsService {
 
   @Autowired
@@ -72,5 +73,13 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     //return new UserInfoDetails(user.get());
 
   }
+  public User getAuthenticatedUser() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    UserInfoDetails userDetails = (UserInfoDetails) authentication.getPrincipal();
+    return userDetails.getUser();  // Access the full User entity
+  }
+
+
+
 }
 

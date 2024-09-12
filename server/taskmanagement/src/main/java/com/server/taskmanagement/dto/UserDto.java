@@ -8,12 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProjectDto {
+public class UserDto {
   private Long id;
-  private String name;
-  private String description;
-  private UserDto owner;
-  //private List<TaskDto> tasks;
-  //private List<TeamDto> teams;
+  private String username;
 }
-
