@@ -1,6 +1,8 @@
 package com.server.taskmanagement.security;
 
 import com.server.taskmanagement.entity.User;
+import lombok.Data;
+import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -10,15 +12,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+
 public class UserInfoDetails implements UserDetails {
 
-  private final String username;
-  private final String password;
+  @Getter
+  private final User user;
   private final List<GrantedAuthority> authorities;
 
   public UserInfoDetails(User user) {
-    this.username = user.getUsername();
-    this.password = user.getPassword();
+    this.user = user;
     this.authorities = Stream.of(user.getRoles().split(","))
       .map(SimpleGrantedAuthority::new)
       .collect(Collectors.toList());
@@ -31,12 +33,12 @@ public class UserInfoDetails implements UserDetails {
 
   @Override
   public String getPassword() {
-    return password;
+    return user.getPassword();
   }
 
   @Override
   public String getUsername() {
-    return username;
+    return user.getUsername();
   }
 
   @Override

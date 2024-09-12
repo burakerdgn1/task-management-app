@@ -40,7 +40,7 @@ public class SecurityConfig {
     http
       .csrf(AbstractHttpConfigurer::disable)
       .authorizeHttpRequests(auth -> auth
-        .requestMatchers("/auth/**").permitAll() // Public access to auth routes
+        .requestMatchers("/auth/**").permitAll().requestMatchers("/projects/**").permitAll() // Public access to auth routes
         .anyRequest().authenticated()
       )
       .sessionManagement(sess -> sess
