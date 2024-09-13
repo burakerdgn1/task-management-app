@@ -65,10 +65,43 @@ public class UserTeamServiceImpl implements UserTeamService {
     return userTeamRepository.findAll();
   }
 
-  @Override
-  public void removeUserFromTeam(Long id) {
-    userTeamRepository.deleteById(id);
+  // Method to find UserTeam relationship
+  private Optional<UserTeam> findUserTeam(User user, Team team) {
+    return userTeamRepository.findByUserAndTeam(user, team);
   }
+
+  public boolean isUserInTeam(Long userId, Long teamId) {
+    return userTeamRepository.findUserTeamByUserIdAndTeamId(userId, teamId).isPresent();
+  }
+
+  @Override
+  @Transactional
+  public void removeUserFromTeam(Long userId, Long teamId, Long creatorId) {
+    User user = userService.findUserById(userId)
+      .orElseThrow(
+        //() -> new UserNotFoundException("User not found with id: " + userId)
+      );
+
+    Team team = teamService.findTeamById(teamId)
+      .orElseThrow(
+        //() -> new TeamNotFoundException("Team not found with id: " + teamId)
+      );
+
+    if (!isTeamCreator(team, creatorId)) {
+      //throw new UnauthorizedActionException("Only the team creator can remove users from the team");
+    }
+    UserTeam userTeam = userTeamRepository.findByUserAndTeam(user, team)
+      .orElseThrow(
+        () -> new IllegalStateException("User is not a member of this team")
+      );
+    // Additional check: Do not allow the creator to remove themselves, if needed
+    if (user.getId().equals(creatorId)) {
+      throw new IllegalStateException("Team creator cannot be removed from the team");
+    }
+
+    userTeamRepository.delete(userTeam);
+  }
+
   private boolean isTeamCreator(Team team, Long creatorId) {
     return team.getCreator().getId().equals(creatorId);
   }
