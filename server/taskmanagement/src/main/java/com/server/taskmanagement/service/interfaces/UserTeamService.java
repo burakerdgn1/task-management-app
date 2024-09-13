@@ -12,6 +12,6 @@ public interface UserTeamService {
 
   List<UserTeam> findAllUserTeams();
 
-  void removeUserFromTeam(Long id);
+  void removeUserFromTeam(Long userId, Long teamId, Long creatorId);
 }
 

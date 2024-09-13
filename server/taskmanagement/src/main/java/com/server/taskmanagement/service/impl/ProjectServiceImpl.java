@@ -7,6 +7,7 @@ import com.server.taskmanagement.repository.TeamRepository;
 import com.server.taskmanagement.service.interfaces.ProjectService;
 import com.server.taskmanagement.service.interfaces.TeamService;
 import lombok.AllArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +19,6 @@ import java.util.Optional;
 public class ProjectServiceImpl implements ProjectService {
 
   private final ProjectRepository projectRepository;
-  private final TeamService teamService;
   private final TeamRepository teamRepository;
 
   @Override

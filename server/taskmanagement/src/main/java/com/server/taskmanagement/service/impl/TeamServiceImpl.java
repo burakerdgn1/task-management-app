@@ -77,7 +77,7 @@ public class TeamServiceImpl implements TeamService {
   }
 
   public boolean isUserPartOfTeam(Long userId, Long teamId) {
-    return userTeamRepository.findByUserIdAndTeamId(userId, teamId).isPresent();
+    return userTeamRepository.findUserTeamByUserIdAndTeamId(userId, teamId).isPresent();
   }
 }
 
