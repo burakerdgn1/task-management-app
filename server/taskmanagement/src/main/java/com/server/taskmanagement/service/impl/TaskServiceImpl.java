@@ -11,7 +11,6 @@ import com.server.taskmanagement.service.interfaces.ProjectService;
 import com.server.taskmanagement.service.interfaces.TaskService;
 import com.server.taskmanagement.service.interfaces.TeamService;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -64,14 +63,35 @@ public class TaskServiceImpl implements TaskService {
   }
 
   @Override
-  public void deleteTask(Long id) {
-    taskRepository.deleteById(id);
+  public void deleteTaskById(Long taskId, Long userId) {
+    Task task = taskRepository.findById(taskId)
+      .orElseThrow(() -> new RuntimeException("Task not found"));
+
+    // Check if the task belongs to a project
+    if (task.getProject() != null) {
+      // Allow deletion if the user is the project creator
+      if (task.getProject().getCreator().getId().equals(userId)) {
+        taskRepository.deleteById(taskId);
+      } else {
+        // throw new UnauthorizedActionException("You are not authorized to delete this project task");
+      }
+    } else {
+      // If the task is a personal task, check if the user is the creator
+      if (task.getUser() != null && task.getUser().getId().equals(userId)) {
+        taskRepository.deleteById(taskId);
+      } else {
+        // throw new UnauthorizedActionException("You are not authorized to delete this personal task");
+      }
+    }
   }
 
+
+
+
   @Transactional
-  public Task createTaskForProject(Long projectId, Task task, Long userId) {
+  public Task createTaskForProject(Long projectId, Task task, Long userId) throws Error{
     if (!isProjectCreator(projectId, userId)) {
-      //throw new UnauthorizedActionException("Only the project creator can add tasks");
+      throw new Error("Only the project creator can add tasks");
     }
     Project project = projectRepository.findById(projectId)
       .orElseThrow(
@@ -105,6 +125,12 @@ public class TaskServiceImpl implements TaskService {
     task.setUser(user);
     taskRepository.save(task);
   }
+
+  @Override
+  public List<Task> getPersonalTasksForUser(Long userId) {
+    return taskRepository.findByUserIdAndProjectIsNull(userId);
+  }
+
 
   private boolean isProjectCreator(Long projectId, Long userId) {
     return projectRepository.findById(projectId)
