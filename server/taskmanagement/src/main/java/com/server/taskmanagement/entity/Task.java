@@ -27,11 +27,11 @@ public class Task {
   private Project project;
 
   @ManyToOne
-  @JoinColumn(name = "team_id", nullable = false)
+  @JoinColumn(name = "team_id")
   private Team team;
 
   @ManyToOne
-  @JoinColumn(name = "user_id", nullable = false)
+  @JoinColumn(name = "user_id")
   private User user;
 }
 
