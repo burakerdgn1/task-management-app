@@ -27,7 +27,8 @@ public class TaskServiceImpl implements TaskService {
 
   private final ProjectRepository projectRepository;
 
-  private final UserRepository userRepository;
+  private final UserServiceImpl userService;
+
 
   private final TeamService teamService;
 
@@ -85,9 +86,6 @@ public class TaskServiceImpl implements TaskService {
     }
   }
 
-
-
-
   @Transactional
   public Task createTaskForProject(Long projectId, Task task, Long userId) throws Error{
     if (!isProjectCreator(projectId, userId)) {
@@ -104,25 +102,36 @@ public class TaskServiceImpl implements TaskService {
 
   @Transactional
   public void assignTaskToUser(Long taskId, Long userId, Long assignerId) {
-    Task task = taskRepository.findById(taskId)
+    Task task = taskRepository.findTaskWithProjectAndUserById(taskId)
       .orElseThrow(
         //() -> new TaskNotFoundException("Task not found")
       );
+    Project project = task.getProject();
+    if (project == null) {
+      //throw new ProjectNotFoundException("Task is not associated with any project.");
+    }
 
     if (!isProjectCreator(task.getProject().getId(), assignerId)) {
       //throw new UnauthorizedActionException("Only the project creator can assign tasks");
     }
+    if(task.getProject().getTeam()==null){
+      //throw new ProjectHasNoTeamException("")
+    }
 
-    User user = userRepository.findById(userId)
+    User user = userService.findUserById(userId)
       .orElseThrow(
         //() -> new UserNotFoundException("User not found")
       );
+    if(user.getTasks().contains(task)){
+      //Task is already assigned
+    }
 
     if (!teamService.isUserPartOfTeam(userId, task.getProject().getTeam().getId())) {
       //throw new UnauthorizedActionException("User is not part of the project team");
     }
 
     task.setUser(user);
+    task.setTeam(task.getProject().getTeam());
     taskRepository.save(task);
   }
 

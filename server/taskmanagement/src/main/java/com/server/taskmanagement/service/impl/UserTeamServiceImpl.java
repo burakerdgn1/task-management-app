@@ -24,7 +24,8 @@ public class UserTeamServiceImpl implements UserTeamService {
 
   @Override
   @Transactional
-  public void addUserToTeam(Long userId, Long teamId,Long creatorId) {
+  public void addUserToTeam(Long userId, Long teamId) {
+
     User user = userService.findUserById(userId)
       .orElseThrow(
         //() -> new UserNotFoundException("User not found with id: " + userId)
@@ -34,7 +35,7 @@ public class UserTeamServiceImpl implements UserTeamService {
         //() -> new TeamNotFoundException("Team not found with id: " + teamId)
       );
 
-    if (!isTeamCreator(team, creatorId)) {
+    if (!isTeamCreator(team, team.getCreator().getId())) {
       //throw new UnauthorizedActionException("Only the team creator can add users to the team");
     }
 

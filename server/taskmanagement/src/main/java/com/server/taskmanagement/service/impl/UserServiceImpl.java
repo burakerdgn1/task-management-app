@@ -4,6 +4,7 @@ import com.server.taskmanagement.repository.UserRepository;
 import com.server.taskmanagement.security.UserInfoDetails;
 import com.server.taskmanagement.service.interfaces.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Primary;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service("userServiceImpl")
+@Primary
 public class UserServiceImpl implements UserService, UserDetailsService {
 
   @Autowired
