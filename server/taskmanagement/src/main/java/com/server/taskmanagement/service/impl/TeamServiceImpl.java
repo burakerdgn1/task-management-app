@@ -1,11 +1,18 @@
 package com.server.taskmanagement.service.impl;
 import com.server.taskmanagement.entity.Project;
 import com.server.taskmanagement.entity.Team;
+import com.server.taskmanagement.entity.User;
 import com.server.taskmanagement.repository.ProjectRepository;
 import com.server.taskmanagement.repository.TeamRepository;
 import com.server.taskmanagement.repository.UserTeamRepository;
 import com.server.taskmanagement.service.interfaces.TeamService;
+import com.server.taskmanagement.service.interfaces.UserService;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Primary;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,11 +22,14 @@ import java.util.Set;
 
 @Service
 @AllArgsConstructor
+
 public class TeamServiceImpl implements TeamService {
 
   private final TeamRepository teamRepository;
-  private final ProjectRepository projectRepository;
   private final UserTeamRepository userTeamRepository;
+
+
+  private final UserServiceImpl userService;
 
   @Override
   public List<Team> getAllTeams() {
@@ -33,20 +43,16 @@ public class TeamServiceImpl implements TeamService {
 
   @Override
   public Team createTeam(Team team) {
+    User authenticatedUser=userService.getAuthenticatedUser();
+    if ( !team.getCreator().getId().equals(authenticatedUser.getId())) {
+      //throw new UnauthorizedActionException("Only team creator can create teams for this project");
+    }
     return teamRepository.save(team);
   }
 
   @Override
   @Transactional
-  public Team createTeamForProject(Long projectId, Team team, Long userId) {
-    Project project = projectRepository.findById(projectId)
-      .orElseThrow(
-        //() -> new ProjectNotFoundException("Project not found")
-      );
-
-    if (!project.getCreator().getId().equals(userId)) {
-      //throw new UnauthorizedActionException("Only project creator can create teams for this project");
-    }
+  public Team createTeamForProject(Project project, Team team) {
 
     team.setCreator(project.getCreator()); // Assign team creator as the project creator
     team.getProjects().add(project); // Assign team to project
@@ -66,6 +72,14 @@ public class TeamServiceImpl implements TeamService {
       return null;
     }
   }
+
+  public void assignProjectToTeam(Long teamId, Long projectId) {
+    Optional<Team> existingTeam = teamRepository.findById(teamId);
+
+
+  }
+
+
 
   @Override
   public void deleteTeam(Long id) {

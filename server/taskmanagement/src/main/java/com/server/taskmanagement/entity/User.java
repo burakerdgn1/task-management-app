@@ -1,9 +1,7 @@
 package com.server.taskmanagement.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.Set;
 
@@ -28,13 +26,20 @@ public class User {
   @Column(nullable = false)
   private String roles = "USER";//default USER
 
-  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+
+  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER)
+  @EqualsAndHashCode.Exclude
+  @ToString.Exclude  // Prevent circular references
   private Set<Task> tasks;
 
-  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER)
+  @EqualsAndHashCode.Exclude
+  @ToString.Exclude  // Prevent circular references
   private Set<UserTeam> userTeams;
 
-  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER)
+  @EqualsAndHashCode.Exclude
+  @ToString.Exclude  // Prevent circular references
   private Set<UserProject> userProjects;
 
 }

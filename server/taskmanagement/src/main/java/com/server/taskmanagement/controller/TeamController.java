@@ -103,7 +103,7 @@ public class TeamController {
       return ResponseEntity.badRequest().body("User is already a member of the team.");
     }
 
-    userTeamService.addUserToTeam(userId, teamId, authenticatedUser.getId());
+    userTeamService.addUserToTeam(userId, teamId);
     return ResponseEntity.ok().build();
   }
 

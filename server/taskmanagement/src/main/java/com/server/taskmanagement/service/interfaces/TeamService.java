@@ -1,5 +1,6 @@
 package com.server.taskmanagement.service.interfaces;
 
+import com.server.taskmanagement.entity.Project;
 import com.server.taskmanagement.entity.Team;
 
 import java.util.List;
@@ -16,7 +17,7 @@ public interface TeamService {
 
   void deleteTeam(Long id);
 
-  Team createTeamForProject(Long projectId, Team team, Long userId);
+  Team createTeamForProject(Project project, Team team);
 
   boolean isUserPartOfTeam(Long userId, Long teamId);
 }

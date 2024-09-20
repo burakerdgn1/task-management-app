@@ -1,8 +1,6 @@
 package com.server.taskmanagement.entity;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import jakarta.persistence.*;
 
 @Entity
@@ -24,14 +22,18 @@ public class Task {
 
   @ManyToOne
   @JoinColumn(name = "project_id")//A task can belong to a single user without project
+  @EqualsAndHashCode.Exclude
   private Project project;
 
   @ManyToOne
   @JoinColumn(name = "team_id")
+  @EqualsAndHashCode.Exclude
   private Team team;
 
   @ManyToOne
   @JoinColumn(name = "user_id")
+  @EqualsAndHashCode.Exclude
+  @ToString.Exclude  // Prevent circular references
   private User user;
 }
 

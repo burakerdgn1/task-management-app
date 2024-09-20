@@ -1,9 +1,7 @@
 package com.server.taskmanagement.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "user_team")
@@ -18,10 +16,14 @@ public class UserTeam {
 
   @ManyToOne
   @JoinColumn(name = "user_id", nullable = false)
+  @ToString.Exclude  // Prevent circular references
+  @EqualsAndHashCode.Exclude
   private User user;
 
   @ManyToOne
   @JoinColumn(name = "team_id", nullable = false)
+  @ToString.Exclude  // Prevent circular references
+  @EqualsAndHashCode.Exclude
   private Team team;
 }
 
