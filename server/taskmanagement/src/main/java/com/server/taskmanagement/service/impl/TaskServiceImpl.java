@@ -25,10 +25,7 @@ public class TaskServiceImpl implements TaskService {
 
   private final TaskRepository taskRepository;
 
-  private final ProjectRepository projectRepository;
-
   private final UserServiceImpl userService;
-
 
   private final TeamService teamService;
 
@@ -91,7 +88,7 @@ public class TaskServiceImpl implements TaskService {
     if (!isProjectCreator(projectId, userId)) {
       throw new Error("Only the project creator can add tasks");
     }
-    Project project = projectRepository.findById(projectId)
+    Project project = projectService.findProjectById(projectId)
       .orElseThrow(
         //() -> new ProjectNotFoundException("Project not found")
       );
@@ -142,9 +139,11 @@ public class TaskServiceImpl implements TaskService {
 
 
   private boolean isProjectCreator(Long projectId, Long userId) {
-    return projectRepository.findById(projectId)
-      .map(project -> project.getCreator().getId().equals(userId))
-      .orElse(false);
+    Project project = projectService.findProjectById(projectId)
+      .orElseThrow(
+        //() -> new ProjectNotFoundException("Project not found")
+      );
+      return project.getCreator().getId().equals(userId);
   }
 
 

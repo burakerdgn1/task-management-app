@@ -4,9 +4,9 @@ import com.server.taskmanagement.entity.Team;
 import com.server.taskmanagement.entity.User;
 import com.server.taskmanagement.repository.ProjectRepository;
 import com.server.taskmanagement.repository.TeamRepository;
-import com.server.taskmanagement.repository.UserTeamRepository;
 import com.server.taskmanagement.service.interfaces.TeamService;
 import com.server.taskmanagement.service.interfaces.UserService;
+import com.server.taskmanagement.service.interfaces.UserTeamService;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -26,7 +26,7 @@ import java.util.Set;
 public class TeamServiceImpl implements TeamService {
 
   private final TeamRepository teamRepository;
-  private final UserTeamRepository userTeamRepository;
+  private final UserTeamServiceImpl userTeamService;
 
 
   private final UserServiceImpl userService;
@@ -80,7 +80,6 @@ public class TeamServiceImpl implements TeamService {
   }
 
 
-
   @Override
   public void deleteTeam(Long id) {
     if (teamRepository.existsById(id)) {
@@ -91,7 +90,7 @@ public class TeamServiceImpl implements TeamService {
   }
 
   public boolean isUserPartOfTeam(Long userId, Long teamId) {
-    return userTeamRepository.findUserTeamByUserIdAndTeamId(userId, teamId).isPresent();
+    return userTeamService.findUserTeamByUserIdAndTeamId(userId, teamId).isPresent();
   }
 }
 

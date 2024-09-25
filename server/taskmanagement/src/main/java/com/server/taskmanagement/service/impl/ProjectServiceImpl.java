@@ -29,9 +29,6 @@ public class ProjectServiceImpl implements ProjectService {
   private final UserServiceImpl userService;
   private final UserProjectServiceImpl userProjectService;
 
-  @PersistenceContext
-  private EntityManager entityManager;
-
 
   @Override
   public Project createProject(Project project) {

@@ -101,6 +101,24 @@ public class UserTeamServiceImpl implements UserTeamService {
     }
 
     userTeamRepository.delete(userTeam);
+
+
+  }
+
+  @Override
+  public Optional<UserTeam> findUserTeamByUserIdAndTeamId(Long userId, Long teamId) {
+    // Check if the user exists
+    userService.findUserById(userId).orElseThrow(
+      //() -> new UserNotFoundException("User not found with id: " + userId)
+    );
+
+    // Check if the team exists
+    teamService.findTeamById(teamId).orElseThrow(
+      //() -> new TeamNotFoundException("Team not found with id: " + teamId)
+    );
+
+    // Query the repository to find the UserTeam relationship
+    return userTeamRepository.findUserTeamByUserIdAndTeamId(userId, teamId);
   }
 
   private boolean isTeamCreator(Team team, Long creatorId) {
