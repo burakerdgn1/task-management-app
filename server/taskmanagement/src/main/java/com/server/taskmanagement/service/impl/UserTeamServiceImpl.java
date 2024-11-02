@@ -1,12 +1,15 @@
 package com.server.taskmanagement.service.impl;
+import com.server.taskmanagement.dto.TeamDto;
 import com.server.taskmanagement.entity.Team;
 import com.server.taskmanagement.entity.User;
 import com.server.taskmanagement.entity.UserTeam;
+import com.server.taskmanagement.mappers.TeamMapper;
 import com.server.taskmanagement.repository.UserTeamRepository;
 import com.server.taskmanagement.service.interfaces.TeamService;
 import com.server.taskmanagement.service.interfaces.UserService;
 import com.server.taskmanagement.service.interfaces.UserTeamService;
 import lombok.AllArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,23 +20,30 @@ import java.util.stream.Collectors;
 @Service
 @AllArgsConstructor
 public class UserTeamServiceImpl implements UserTeamService {
-  private final UserService userService;
+  private final UserServiceImpl userService;
   private final TeamService teamService;
-
   private final UserTeamRepository userTeamRepository;
+  private final TeamMapper teamMapper;
 
   @Override
   @Transactional
   public void addUserToTeam(Long userId, Long teamId) {
 
-    User user = userService.findUserById(userId)
-      .orElseThrow(
-        //() -> new UserNotFoundException("User not found with id: " + userId)
-      );
-    Team team = teamService.findTeamById(teamId)
+    User authenticatedUser = userService.getAuthenticatedUser();
+    TeamDto teamDto = teamService.findTeamById(teamId)
       .orElseThrow(
         //() -> new TeamNotFoundException("Team not found with id: " + teamId)
       );
+
+    if (!teamDto.getOwner().getId().equals(authenticatedUser.getId())) {
+      //exception
+    }
+
+
+    User user = userService.findUserById(userId);
+
+
+    Team team= teamMapper.toEntity(teamDto);
 
     if (!isTeamCreator(team, team.getCreator().getId())) {
       //throw new UnauthorizedActionException("Only the team creator can add users to the team");
@@ -77,26 +87,25 @@ public class UserTeamServiceImpl implements UserTeamService {
 
   @Override
   @Transactional
-  public void removeUserFromTeam(Long userId, Long teamId, Long creatorId) {
-    User user = userService.findUserById(userId)
-      .orElseThrow(
-        //() -> new UserNotFoundException("User not found with id: " + userId)
-      );
-
-    Team team = teamService.findTeamById(teamId)
+  public void removeUserFromTeam(Long userToRemoveId, Long teamId) {
+    TeamDto teamDto = teamService.findTeamById(teamId)
       .orElseThrow(
         //() -> new TeamNotFoundException("Team not found with id: " + teamId)
       );
+    User authenticatedUser = userService.getAuthenticatedUser();
+    User userToRemove = userService.findUserById(userToRemoveId);
 
-    if (!isTeamCreator(team, creatorId)) {
+    Team team = teamMapper.toEntity(teamDto);
+
+    if (!isTeamCreator(team, authenticatedUser.getId())) {
       //throw new UnauthorizedActionException("Only the team creator can remove users from the team");
     }
-    UserTeam userTeam = userTeamRepository.findByUserAndTeam(user, team)
+    UserTeam userTeam = userTeamRepository.findByUserAndTeam(userToRemove, team)
       .orElseThrow(
         () -> new IllegalStateException("User is not a member of this team")
       );
     // Additional check: Do not allow the creator to remove themselves, if needed
-    if (user.getId().equals(creatorId)) {
+    if (userToRemove.getId().equals(authenticatedUser.getId())) {
       throw new IllegalStateException("Team creator cannot be removed from the team");
     }
 
@@ -108,9 +117,7 @@ public class UserTeamServiceImpl implements UserTeamService {
   @Override
   public Optional<UserTeam> findUserTeamByUserIdAndTeamId(Long userId, Long teamId) {
     // Check if the user exists
-    userService.findUserById(userId).orElseThrow(
-      //() -> new UserNotFoundException("User not found with id: " + userId)
-    );
+    userService.findUserById(userId);
 
     // Check if the team exists
     teamService.findTeamById(teamId).orElseThrow(
@@ -121,8 +128,8 @@ public class UserTeamServiceImpl implements UserTeamService {
     return userTeamRepository.findUserTeamByUserIdAndTeamId(userId, teamId);
   }
 
-  private boolean isTeamCreator(Team team, Long creatorId) {
-    return team.getCreator().getId().equals(creatorId);
+  private boolean isTeamCreator(Team team, Long userId) {
+    return team.getCreator().getId().equals(userId);
   }
 }
 

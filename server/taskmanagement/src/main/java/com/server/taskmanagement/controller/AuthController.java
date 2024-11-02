@@ -3,6 +3,7 @@ package com.server.taskmanagement.controller;
 
 import com.server.taskmanagement.entity.User;
 import com.server.taskmanagement.security.JwtService;
+import com.server.taskmanagement.service.impl.UserServiceImpl;
 import com.server.taskmanagement.service.interfaces.UserService;
 import com.server.taskmanagement.dto.AuthRequest;
 import com.server.taskmanagement.dto.AuthResponse;
@@ -20,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
   @Autowired
-  private UserService userService;
+  private UserServiceImpl userService;
 
   @Autowired
   private JwtService jwtService;
@@ -31,11 +32,15 @@ public class AuthController {
   @PostMapping("/register")
   public ResponseEntity<String> registerUser(@RequestBody AuthRequest authRequest) {
     // Convert AuthRequest to User entity with mappers
+
+    /*
     User user = new User();
     user.setUsername(authRequest.getUsername());
     user.setPassword(authRequest.getPassword()); // Password encoding will be handled in the service layer
-    user.setRoles("USER"); // Set default role for new users
-    userService.createUser(user);
+    user.setRoles("USER");
+    */
+    // Set default role for new users
+    userService.createUser(authRequest);
     return new ResponseEntity<>("User registered successfully!", HttpStatus.CREATED);
   }
 

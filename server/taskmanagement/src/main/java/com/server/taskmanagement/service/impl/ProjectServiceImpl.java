@@ -1,24 +1,23 @@
 package com.server.taskmanagement.service.impl;
 
+import com.server.taskmanagement.dto.ProjectDto;
+import com.server.taskmanagement.dto.TeamDto;
 import com.server.taskmanagement.entity.Project;
 import com.server.taskmanagement.entity.Team;
 import com.server.taskmanagement.entity.User;
 import com.server.taskmanagement.entity.UserProject;
+import com.server.taskmanagement.mappers.ProjectMapper;
+import com.server.taskmanagement.mappers.TeamMapper;
 import com.server.taskmanagement.repository.ProjectRepository;
-import com.server.taskmanagement.repository.TeamRepository;
 import com.server.taskmanagement.service.interfaces.ProjectService;
-import com.server.taskmanagement.service.interfaces.TeamService;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import lombok.AllArgsConstructor;
-import org.springframework.data.annotation.Persistent;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 @Service
 @AllArgsConstructor
@@ -28,27 +27,62 @@ public class ProjectServiceImpl implements ProjectService {
   private final TeamServiceImpl teamService;
   private final UserServiceImpl userService;
   private final UserProjectServiceImpl userProjectService;
+  private final ProjectMapper projectMapper;
+  private final TeamMapper teamMapper;
 
 
   @Override
-  public Project createProject(Project project) {
-    User authenticatedUser=userService.getAuthenticatedUser();
-    if ( !project.getCreator().getId().equals(authenticatedUser.getId())) {
+  public ProjectDto createProject(ProjectDto projectDto) {
+    Project project = projectMapper.toProject(projectDto);
+    User authenticatedUser = userService.getAuthenticatedUser();
+    if (!projectDto.getOwner().getId().equals(authenticatedUser.getId())) {
       //throw new UnauthorizedActionException("Only team creator can create teams for this project");
     }
-    return projectRepository.save(project);
+    project.setCreator(authenticatedUser);  // Set the authenticated user as the project creator
+    Project savedProject = projectRepository.save(project);
+    return projectMapper.toProjectDto(savedProject);
+
   }
 
   @Override
-  public Optional<Project> findProjectById(Long id) {
-    return projectRepository.findById(id);
+  public ProjectDto createProjectWithTeam(ProjectDto projectDto,Team team) {
+    Project project = projectMapper.toProject(projectDto);
+    User authenticatedUser = userService.getAuthenticatedUser();
+    if (!projectDto.getOwner().getId().equals(authenticatedUser.getId())) {
+      //throw new UnauthorizedActionException("Only team creator can create teams for this project");
+    }
+    project.setCreator(authenticatedUser);
+    project.setTeam(team);// Set the authenticated user as the project creator
+    Project savedProject = projectRepository.save(project);
+    return projectMapper.toProjectDto(savedProject);
+
   }
+
+  @Override
+  public Optional<ProjectDto> findProjectById(Long id) {
+    User authenticatedUser = userService.getAuthenticatedUser();
+
+    // Verify that the authenticated user is the creator of the project
+    Optional<Project> projectOptional = projectRepository.findById(id);
+    if (projectOptional.isEmpty() || !projectOptional.get().getCreator().getId().equals(authenticatedUser.getId())) {
+      //exception
+    }
+    return projectOptional
+      .map(projectMapper::toProjectDto);  // Directly map to ProjectDto
+  }
+
+  public Project getProjectEntity(Long projectId) {
+    return projectRepository.findById(projectId)
+      .orElseThrow(() -> new RuntimeException("Project not found")); // Add specific exception if needed
+  }
+
 
   @Override
   public List<Project> findAllProjects() {
     return projectRepository.findAll();
   }
 
+  //will be updated with project mapper
   @Override
   public Project updateProject(Long id, Project updatedProject) {
     return projectRepository.findById(id)
@@ -65,6 +99,13 @@ public class ProjectServiceImpl implements ProjectService {
 
   @Override
   public void deleteProject(Long id) {
+    User authenticatedUser = userService.getAuthenticatedUser();
+    Optional<ProjectDto> project = findProjectById(id);
+
+    // Check if the authenticated user is the creator of the project
+    if (project.isPresent()&&!project.get().getOwner().getId().equals(authenticatedUser.getId())) {
+      // exception if the user is not the owner
+    }
     projectRepository.deleteById(id);
   }
 
@@ -72,20 +113,31 @@ public class ProjectServiceImpl implements ProjectService {
 
 
   @Transactional
-  public Project assignTeamToProject(Long teamId, Long projectId) {
-    Project project = findProjectById(projectId)
+  public ProjectDto assignTeamToProject(Long teamId, Long projectId) {
+    ProjectDto projectDto = findProjectById(projectId)
       .orElseThrow(
         //() -> new ProjectNotFoundException("Project not found")
       );
+
+    User authenticatedUser = userService.getAuthenticatedUser();
+
+    // Verify that the authenticated user is the creator of the project
+    if (!projectDto.getOwner().getId().equals(authenticatedUser.getId())) {
+      //exception..
+    }
+
+    Project project= projectMapper.toProject(projectDto);
 
     if(project.getTeam()!=null){
       throw new RuntimeException("This project already has a team assigned.");
     }
 
-    Team team = teamService.findTeamById(teamId)
+    TeamDto teamDto = teamService.findTeamById(teamId)
       .orElseThrow(
         //() -> new TeamNotFoundException("Team not found")
       );
+
+    Team team = teamMapper.toEntity(teamDto);
 
     project.setTeam(team);
 
@@ -99,24 +151,30 @@ public class ProjectServiceImpl implements ProjectService {
       userProjectService.addUserToProject(userProject);
     });
 
-    teamService.createTeam(team);   // Update team with new project
-
-    return createProject(project);
+    teamService.createTeam(teamDto);   // Update team with new project
+    return createProjectWithTeam(projectDto,team);
   }
 
   @Transactional
   public void unassignTeamFromProject(Long projectId) {
-    Project project = findProjectById(projectId)
+    ProjectDto projectDto = findProjectById(projectId)
       .orElseThrow(
         //() -> new ProjectNotFoundException("Project not found with id: " + projectId)
       );
 
+    User authenticatedUser = userService.getAuthenticatedUser();
+
+    // Verify that the authenticated user is the creator of the project
+    if ( !projectDto.getOwner().getId().equals(authenticatedUser.getId())) {
+      //...
+    }
+
+    Project project = projectMapper.toProject(projectDto);
     Team team = project.getTeam();
 
     if (team == null) {
       throw new IllegalStateException("No team is assigned to this project.");
     }
-
 
     /*
     Set<UserProject> userProjects = project.getUserProjects();
@@ -126,14 +184,14 @@ public class ProjectServiceImpl implements ProjectService {
     });
     */
 
-
     // Unassign the team from the project
     project.setTeam(null);
     team.getProjects().remove(project);
 
+    TeamDto teamDto = teamMapper.toDto(team);
     // Save both the team and the project
-    teamService.createTeam(team); // Persist the changes to the team
-    createProject(project);        // Persist the changes to the project
+    teamService.createTeam(teamDto); // Persist the changes to the team
+    createProjectWithTeam(projectDto,null);        // Persist the changes to the project
   }
 
 

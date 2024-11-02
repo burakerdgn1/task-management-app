@@ -1,14 +1,18 @@
 package com.server.taskmanagement.service.interfaces;
 
+import com.server.taskmanagement.dto.ProjectDto;
 import com.server.taskmanagement.entity.Project;
+import com.server.taskmanagement.entity.Team;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface ProjectService {
-  Project createProject(Project project);
+  ProjectDto createProject(ProjectDto projectDto);
 
-  Optional<Project> findProjectById(Long id);
+  ProjectDto createProjectWithTeam(ProjectDto projectDto, Team team);
+
+  Optional<ProjectDto> findProjectById(Long id);
 
   List<Project> findAllProjects();
 
@@ -16,6 +20,6 @@ public interface ProjectService {
 
   void deleteProject(Long id);
 
-  Project assignTeamToProject(Long teamId, Long projectId);
+  ProjectDto assignTeamToProject(Long teamId, Long projectId);
 }
 

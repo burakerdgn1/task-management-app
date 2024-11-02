@@ -20,6 +20,7 @@ public class Task {
   @Column(nullable = false)
   private String description;
 
+
   @ManyToOne
   @JoinColumn(name = "project_id")//A task can belong to a single user without project
   @EqualsAndHashCode.Exclude
