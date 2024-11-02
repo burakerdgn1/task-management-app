@@ -13,6 +13,7 @@ public class TeamDto {
   private Long id;
   private String name;
   private UserDto owner;
+
   //private List<UserDto> members;
   //private List<ProjectDto> projects;
   //private List<TaskDto> tasks;

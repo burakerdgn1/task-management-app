@@ -1,5 +1,9 @@
 package com.server.taskmanagement.service.impl;
+import com.server.taskmanagement.dto.AuthRequest;
+import com.server.taskmanagement.dto.UserDto;
 import com.server.taskmanagement.entity.User;
+import com.server.taskmanagement.mappers.AuthMapper;
+import com.server.taskmanagement.mappers.UserMapper;
 import com.server.taskmanagement.repository.UserRepository;
 import com.server.taskmanagement.security.UserInfoDetails;
 import com.server.taskmanagement.service.interfaces.UserService;
@@ -26,30 +30,38 @@ public class UserServiceImpl implements UserService, UserDetailsService {
   @Autowired
   private PasswordEncoder encoder;
 
+  @Autowired
+  AuthMapper authMapper;
+
+  @Autowired
+  UserMapper userMapper;
+
   @Override
-  public User createUser(User user) {
-    user.setPassword(encoder.encode(user.getPassword()));
-    return userRepository.save(user);
+  public User createUser(AuthRequest authRequest) {
+    User userToCreate = authMapper.toUser(authRequest);
+    userToCreate.setPassword(encoder.encode(authRequest.getPassword()));
+    userToCreate.setRoles("USER");
+    return userRepository.save(userToCreate);
   }
 
   @Override
-  public User updateUser(Long userId, User user) {
+  public UserDto updateUser(Long userId, UserDto userDto) {
     Optional<User> existingUser = userRepository.findById(userId);
     if (existingUser.isPresent()) {
       User updatedUser = existingUser.get();
-      updatedUser.setUsername(user.getUsername());
-      updatedUser.setPassword(user.getPassword());
-      // Update other fields as necessary
-      return userRepository.save(updatedUser);
+      updatedUser.setUsername(userDto.getUsername());
+      //updatedUser.setPassword(encoder.encode(userDto.getPassword())); // Encrypt password
+      return userMapper.toDto(userRepository.save(updatedUser));  // Convert User to UserDto
     } else {
-      // Handle user not found scenario
-      return null;
+      return null; // Handle user not found
     }
   }
 
   @Override
-  public Optional<User> findUserById(Long id) {
-    return userRepository.findById(id);
+  public User findUserById(Long id) {
+    return userRepository.findById(id).orElseThrow(
+      //...
+    );
   }
 
   @Override

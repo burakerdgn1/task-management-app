@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @CrossOrigin(origins = "*")
@@ -26,31 +27,16 @@ public class TaskController {
   // Create task for a project and assign to a team member
   @PostMapping("/projects/{projectId}")
   public ResponseEntity<TaskDto> createTaskForProject(@PathVariable Long projectId, @RequestBody TaskDto taskDto) {
-    User authenticatedUser = userService.getAuthenticatedUser();
-
-    Task task = new Task();
-    task.setTitle(taskDto.getTitle());
-    task.setDescription(taskDto.getDescription());
-
-    Task savedTask = taskService.createTaskForProject(projectId, task, authenticatedUser.getId());
-
-    return ResponseEntity.ok(mapTaskToDto(savedTask));
+    Long authenticatedUserId = userService.getAuthenticatedUser().getId();
+    TaskDto savedTask = taskService.createTaskForProject(projectId, taskDto, authenticatedUserId);
+    return ResponseEntity.ok(savedTask);
   }
 
   // Create a personal task (independent from any project)
   @PostMapping("/personal")
   public ResponseEntity<TaskDto> createPersonalTask(@RequestBody TaskDto taskDto) {
-    User authenticatedUser = userService.getAuthenticatedUser();
-
-    Task task = new Task();
-    task.setTitle(taskDto.getTitle());
-    task.setDescription(taskDto.getDescription());
-    task.setUser(authenticatedUser);  // Assigning to the authenticated user
-    task.setProject(null);  // No project for personal tasks
-
-    Task savedTask = taskService.createTask(task);
-
-    return ResponseEntity.ok(mapTaskToDto(savedTask));
+    TaskDto savedTask = taskService.createTask(taskDto);
+    return ResponseEntity.ok(savedTask);
   }
 
   // Assign task to a user within the project's team
@@ -66,10 +52,9 @@ public class TaskController {
   // Get task by ID
   @GetMapping("/{taskId}")
   public ResponseEntity<TaskDto> getTask(@PathVariable Long taskId) {
-    Task task = taskService.findTaskById(taskId)
-      .orElseThrow(() -> new RuntimeException("Task not found"));
+    Optional<TaskDto> task = taskService.findTaskById(taskId);
 
-    return ResponseEntity.ok(mapTaskToDto(task));
+    return ResponseEntity.ok(task.get());
   }
 
   @DeleteMapping("/{taskId}")
@@ -86,34 +71,10 @@ public class TaskController {
   @GetMapping("/personal")
   public ResponseEntity<List<TaskDto>> getUserPersonalTasks() {
     User authenticatedUser = userService.getAuthenticatedUser();
-    List<Task> tasks = taskService.getPersonalTasksForUser(authenticatedUser.getId());
-
-    List<TaskDto> taskDtos = tasks.stream().map(this::mapTaskToDto).collect(Collectors.toList());
-    return ResponseEntity.ok(taskDtos);
+    List<TaskDto> tasks = taskService.getPersonalTasksForUser(authenticatedUser.getId());
+    return ResponseEntity.ok(tasks);
   }
 
-  // Helper method to map Task to TaskDto
-  private TaskDto mapTaskToDto(Task task) {
-    TaskDto taskDto = new TaskDto();
-    taskDto.setId(task.getId());
-    taskDto.setTitle(task.getTitle());
-    taskDto.setDescription(task.getDescription());
 
-    if (task.getUser() != null) {
-      taskDto.setUserId(task.getUser().getId());
-      taskDto.setAssignedUsername(task.getUser().getUsername());
-    }
-
-    if (task.getProject() != null) {
-      taskDto.setProjectId(task.getProject().getId());
-      taskDto.setProjectName(task.getProject().getName());    }
-
-    if (task.getTeam() != null) {
-      taskDto.setTeamId(task.getTeam().getId());
-      taskDto.setTeamName(task.getTeam().getName());  // Optionally map team name
-    }
-
-    return taskDto;
-  }
 }
 

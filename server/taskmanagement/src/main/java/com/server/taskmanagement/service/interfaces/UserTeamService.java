@@ -12,7 +12,7 @@ public interface UserTeamService {
 
   List<UserTeam> findAllUserTeams();
 
-  void removeUserFromTeam(Long userId, Long teamId, Long creatorId);
+  void removeUserFromTeam(Long userToRemoveId, Long teamId);
 
   Optional<UserTeam> findUserTeamByUserIdAndTeamId(Long userId, Long teamId);
 

@@ -1,5 +1,7 @@
 package com.server.taskmanagement.service.interfaces;
 
+import com.server.taskmanagement.dto.ProjectDto;
+import com.server.taskmanagement.dto.TeamDto;
 import com.server.taskmanagement.entity.Project;
 import com.server.taskmanagement.entity.Team;
 
@@ -7,17 +9,17 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TeamService {
-  List<Team> getAllTeams();
+  List<TeamDto> getAllTeams();
 
-  Optional<Team> findTeamById(Long id);
+  Optional<TeamDto> findTeamById(Long id);
 
-  Team createTeam(Team team);
+  TeamDto createTeam(TeamDto team);
 
-  Team updateTeam(Long id, Team team);
+  TeamDto updateTeam(Long id, TeamDto team);
 
   void deleteTeam(Long id);
 
-  Team createTeamForProject(Project project, Team team);
+  TeamDto createTeamForProject(ProjectDto project, TeamDto team);
 
   boolean isUserPartOfTeam(Long userId, Long teamId);
 }

@@ -13,6 +13,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/teams")
@@ -30,57 +32,30 @@ public class TeamController {
 
   @PostMapping()
   public ResponseEntity<TeamDto> createTeam(@RequestBody TeamDto teamDto) {
-    User authenticatedUser = userService.getAuthenticatedUser();
-
-    Team team = new Team();
-    team.setName(teamDto.getName());
-    team.setCreator(authenticatedUser);
-
-    Team savedTeam = teamService.createTeam(team);
-
-    // Mapping to TeamDto
-    TeamDto savedTeamDto = new TeamDto();
-    savedTeamDto.setId(savedTeam.getId());
-    savedTeamDto.setName(savedTeam.getName());
-
-    // Setting creator/owner
-    UserDto creatorDto = new UserDto();
+    TeamDto savedTeam = teamService.createTeam(teamDto);
+    // Setting creator
+    /*UserDto creatorDto = new UserDto();
     creatorDto.setId(authenticatedUser.getId());
     creatorDto.setUsername(authenticatedUser.getUsername());
-
-    savedTeamDto.setOwner(creatorDto);
-    return ResponseEntity.ok(savedTeamDto);
+    savedTeam.setOwner(creatorDto);*/
+    return ResponseEntity.ok(savedTeam);
   }
 
   @GetMapping("/{teamId}")
   public ResponseEntity<TeamDto> getTeam(@PathVariable Long teamId) {
-    Team team = teamService.findTeamById(teamId)
-      .orElseThrow(
-        //() -> new TeamNotFoundException("Team not found with id: " + teamId)
-      );
+    Optional<TeamDto> teamDto = teamService.findTeamById(teamId);
 
-    TeamDto teamDto = new TeamDto();
-    teamDto.setId(team.getId());
-    teamDto.setName(team.getName());
-
+    /*
     UserDto ownerDto = new UserDto();
-    ownerDto.setId(team.getCreator().getId());
-    ownerDto.setUsername(team.getCreator().getUsername());
-    teamDto.setOwner(ownerDto);
+    ownerDto.setId(teamDto.getOwner().getId());
+    ownerDto.setUsername(teamDto.getOwner().getUsername());
+    teamDto.setOwner(ownerDto);*/
 
-    return ResponseEntity.ok(teamDto);
+    return ResponseEntity.ok(teamDto.get());
   }
 
   @DeleteMapping("/{teamId}")
   public ResponseEntity<Void> deleteTeam(@PathVariable Long teamId) {
-    User authenticatedUser = userService.getAuthenticatedUser();
-    Team team = teamService.findTeamById(teamId)
-      .orElseThrow(
-        //() -> new TeamNotFoundException("Team not found with id: " + teamId)
-      );
-    if (!team.getCreator().getId().equals(authenticatedUser.getId())) {
-      return ResponseEntity.status(403).build();
-    }
 
     teamService.deleteTeam(teamId);
     return ResponseEntity.noContent().build();
@@ -88,20 +63,6 @@ public class TeamController {
 
   @PostMapping("/{teamId}/users")
   public ResponseEntity<String> addUserToTeam(@PathVariable Long teamId, @RequestBody Long userId) {
-    User authenticatedUser = userService.getAuthenticatedUser();
-    Team team = teamService.findTeamById(teamId)
-      .orElseThrow(
-        //() -> new TeamNotFoundException("Team not found with id: " + teamId)
-      );
-
-    if (!team.getCreator().getId().equals(authenticatedUser.getId())) {
-      return ResponseEntity.status(403).build();
-    }
-
-    // Check if the user is already a member of the team
-    if (userTeamService.isUserInTeam(userId, teamId)) {
-      return ResponseEntity.badRequest().body("User is already a member of the team.");
-    }
 
     userTeamService.addUserToTeam(userId, teamId);
     return ResponseEntity.ok().build();
@@ -109,20 +70,8 @@ public class TeamController {
 
   @DeleteMapping("/{teamId}/users/{userId}")
   public ResponseEntity<String> deleteUserFromTeam(@PathVariable Long teamId, @PathVariable Long userId) {
-    User authenticatedUser = userService.getAuthenticatedUser();
-    Team team = teamService.findTeamById(teamId)
-      .orElseThrow(
-        //() -> new TeamNotFoundException("Team not found with id: " + teamId)
-      );
 
-    if (!team.getCreator().getId().equals(authenticatedUser.getId())) {
-      return ResponseEntity.status(403).build();
-    }
-    if (!userTeamService.isUserInTeam(userId, teamId)) {
-      return ResponseEntity.badRequest().body("User is not a member of the team.");
-    }
-
-    userTeamService.removeUserFromTeam(userId, teamId,authenticatedUser.getId());
+    userTeamService.removeUserFromTeam(userId, teamId);
     return ResponseEntity.ok().build();
   }
 }

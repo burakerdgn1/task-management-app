@@ -1,24 +1,25 @@
 package com.server.taskmanagement.service.interfaces;
 
+import com.server.taskmanagement.dto.TaskDto;
 import com.server.taskmanagement.entity.Task;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface TaskService {
-  Task createTask(Task task);
+  TaskDto createTask(TaskDto task);
 
-  Optional<Task> findTaskById(Long id);
+  Optional<TaskDto> findTaskById(Long id);
 
-  List<Task> findAllTasks();
+  List<TaskDto> findAllTasks();
 
-  Task updateTask(Long id, Task updatedTask);
+  TaskDto updateTask(Long id, TaskDto updatedTaskDto);
 
   void deleteTaskById(Long taskId, Long userId);
 
-  Task createTaskForProject(Long projectId, Task task, Long userId);
+  TaskDto createTaskForProject(Long projectId, TaskDto taskDto, Long userId);
 
   void assignTaskToUser(Long taskId, Long userId, Long assignerId);
 
-  List<Task> getPersonalTasksForUser(Long userId);
+  List<TaskDto> getPersonalTasksForUser(Long userId);
 }

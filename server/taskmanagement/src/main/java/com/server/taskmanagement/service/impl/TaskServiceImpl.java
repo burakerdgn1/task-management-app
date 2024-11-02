@@ -1,9 +1,11 @@
 package com.server.taskmanagement.service.impl;
 
-
+import com.server.taskmanagement.dto.ProjectDto;
+import com.server.taskmanagement.dto.TaskDto;
 import com.server.taskmanagement.entity.Project;
 import com.server.taskmanagement.entity.Task;
 import com.server.taskmanagement.entity.User;
+import com.server.taskmanagement.mappers.TaskMapper;
 import com.server.taskmanagement.repository.ProjectRepository;
 import com.server.taskmanagement.repository.TaskRepository;
 import com.server.taskmanagement.repository.UserRepository;
@@ -16,12 +18,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
 public class TaskServiceImpl implements TaskService {
 
-  private final ProjectService projectService;
+  private final ProjectServiceImpl projectService;
 
   private final TaskRepository taskRepository;
 
@@ -29,35 +32,40 @@ public class TaskServiceImpl implements TaskService {
 
   private final TeamService teamService;
 
+  private final TaskMapper taskMapper;
+
   @Override
-  public Task createTask(Task task) {
-    return taskRepository.save(task);
+  public TaskDto createTask(TaskDto taskDto) {
+    User authenticatedUser = userService.getAuthenticatedUser();
+    Task task = taskMapper.toEntity(taskDto);  // Map to entity
+    task.setUser(authenticatedUser);
+    task.setProject(null);
+    Task savedTask = taskRepository.save(task);
+    return taskMapper.toDto(savedTask);  // Map to DTO
   }
 
   @Override
-  public Optional<Task> findTaskById(Long id) {
-    return taskRepository.findById(id);
+  public Optional<TaskDto> findTaskById(Long id) {
+    Optional<Task> task= taskRepository.findById(id);
+    if(task.isEmpty()){
+      //exception
+    }
+    return task.map(taskMapper::toDto);
   }
 
   @Override
-  public List<Task> findAllTasks() {
-    return taskRepository.findAll();
+  public List<TaskDto> findAllTasks() {
+    List<Task> tasks = taskRepository.findAll();
+    return tasks.stream()
+      .map(taskMapper::toDto)  // Map each task to DTO
+      .collect(Collectors.toList());
   }
 
   @Override
-  public Task updateTask(Long id, Task updatedTask) {
-    return taskRepository.findById(id)
-      .map(existingTask -> {
-        existingTask.setTitle(updatedTask.getTitle());
-        existingTask.setDescription(updatedTask.getDescription());
-        //existingTask.setDeadline(updatedTask.getDeadline());
-        //existingTask.setStatus(updatedTask.getStatus());
-        // Update other fields as necessary
-        return taskRepository.save(existingTask);
-      })
-      .orElseThrow(
-        //() -> new TaskNotFoundException("Task not found with id: " + id)
-      );
+  public TaskDto updateTask(Long id, TaskDto updatedTaskDto) {
+    Task updatedTask = taskMapper.toEntity(updatedTaskDto);  // Map to entity
+    Task savedTask = taskRepository.save(updatedTask);
+    return taskMapper.toDto(savedTask);  // Map to DTO
   }
 
   @Override
@@ -84,17 +92,16 @@ public class TaskServiceImpl implements TaskService {
   }
 
   @Transactional
-  public Task createTaskForProject(Long projectId, Task task, Long userId) throws Error{
+  public TaskDto createTaskForProject(Long projectId, TaskDto taskDto, Long userId) throws Error {
     if (!isProjectCreator(projectId, userId)) {
       throw new Error("Only the project creator can add tasks");
     }
-    Project project = projectService.findProjectById(projectId)
-      .orElseThrow(
-        //() -> new ProjectNotFoundException("Project not found")
-      );
 
-    task.setProject(project);
-    return taskRepository.save(task);
+    Task task = taskMapper.toEntity(taskDto);  // Map to entity
+    task.setProject(projectService.getProjectEntity(projectId));
+
+    Task savedTask = taskRepository.save(task);
+    return taskMapper.toDto(savedTask);  // Map to DTO
   }
 
   @Transactional
@@ -115,10 +122,7 @@ public class TaskServiceImpl implements TaskService {
       //throw new ProjectHasNoTeamException("")
     }
 
-    User user = userService.findUserById(userId)
-      .orElseThrow(
-        //() -> new UserNotFoundException("User not found")
-      );
+    User user = userService.findUserById(userId);
     if(user.getTasks().contains(task)){
       //Task is already assigned
     }
@@ -133,17 +137,19 @@ public class TaskServiceImpl implements TaskService {
   }
 
   @Override
-  public List<Task> getPersonalTasksForUser(Long userId) {
-    return taskRepository.findByUserIdAndProjectIsNull(userId);
+  public List<TaskDto> getPersonalTasksForUser(Long userId) {
+    List<Task> tasks = taskRepository.findByUserIdAndProjectIsNull(userId);
+    return tasks.stream()
+      .map(taskMapper::toDto)  // Map each task to DTO
+      .collect(Collectors.toList());
   }
 
-
   private boolean isProjectCreator(Long projectId, Long userId) {
-    Project project = projectService.findProjectById(projectId)
+    ProjectDto project = projectService.findProjectById(projectId)
       .orElseThrow(
         //() -> new ProjectNotFoundException("Project not found")
       );
-      return project.getCreator().getId().equals(userId);
+      return project.getOwner().getId().equals(userId);
   }
 
 
