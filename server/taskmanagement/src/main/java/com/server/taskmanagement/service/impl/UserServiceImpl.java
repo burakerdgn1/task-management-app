@@ -2,6 +2,7 @@ package com.server.taskmanagement.service.impl;
 import com.server.taskmanagement.dto.AuthRequest;
 import com.server.taskmanagement.dto.UserDto;
 import com.server.taskmanagement.entity.User;
+import com.server.taskmanagement.exception.user.UserNotFoundException;
 import com.server.taskmanagement.mappers.AuthMapper;
 import com.server.taskmanagement.mappers.UserMapper;
 import com.server.taskmanagement.repository.UserRepository;
@@ -46,21 +47,19 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
   @Override
   public UserDto updateUser(Long userId, UserDto userDto) {
-    Optional<User> existingUser = userRepository.findById(userId);
-    if (existingUser.isPresent()) {
-      User updatedUser = existingUser.get();
-      updatedUser.setUsername(userDto.getUsername());
-      //updatedUser.setPassword(encoder.encode(userDto.getPassword())); // Encrypt password
-      return userMapper.toDto(userRepository.save(updatedUser));  // Convert User to UserDto
-    } else {
-      return null; // Handle user not found
-    }
+    User existingUser = userRepository.findById(userId).orElseThrow(
+      ()-> new UserNotFoundException("User with "+userId+" not found")
+    );
+    existingUser.setUsername(userDto.getUsername());
+    //updatedUser.setPassword(encoder.encode(userDto.getPassword())); // Encrypt password
+    return userMapper.toDto(userRepository.save(existingUser));  // Convert User to UserDto
+
   }
 
   @Override
   public User findUserById(Long id) {
     return userRepository.findById(id).orElseThrow(
-      //...
+      () -> new UserNotFoundException("User with "+id+" not found")
     );
   }
 
@@ -84,7 +83,6 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     // Implement UserDetails directly from your User entity
     return user.map(UserInfoDetails::new)
       .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
-    //return new UserInfoDetails(user.get());
 
   }
   public User getAuthenticatedUser() {

@@ -5,6 +5,9 @@ import com.server.taskmanagement.dto.TaskDto;
 import com.server.taskmanagement.entity.Project;
 import com.server.taskmanagement.entity.Task;
 import com.server.taskmanagement.entity.User;
+import com.server.taskmanagement.exception.auth.UnauthorizedActionException;
+import com.server.taskmanagement.exception.project.ProjectNotFoundException;
+import com.server.taskmanagement.exception.task.*;
 import com.server.taskmanagement.mappers.TaskMapper;
 import com.server.taskmanagement.repository.ProjectRepository;
 import com.server.taskmanagement.repository.TaskRepository;
@@ -35,7 +38,7 @@ public class TaskServiceImpl implements TaskService {
   private final TaskMapper taskMapper;
 
   @Override
-  public TaskDto createTask(TaskDto taskDto) {
+  public TaskDto createPersonalTask(TaskDto taskDto) {
     User authenticatedUser = userService.getAuthenticatedUser();
     Task task = taskMapper.toEntity(taskDto);  // Map to entity
     task.setUser(authenticatedUser);
@@ -46,11 +49,10 @@ public class TaskServiceImpl implements TaskService {
 
   @Override
   public Optional<TaskDto> findTaskById(Long id) {
-    Optional<Task> task= taskRepository.findById(id);
-    if(task.isEmpty()){
-      //exception
-    }
-    return task.map(taskMapper::toDto);
+    Task task= taskRepository.findById(id).orElseThrow(
+      ()->new TaskNotFoundException("Task with id " + id + " not found")
+    );
+    return Optional.of(taskMapper.toDto(task));
   }
 
   @Override
@@ -69,32 +71,34 @@ public class TaskServiceImpl implements TaskService {
   }
 
   @Override
-  public void deleteTaskById(Long taskId, Long userId) {
+  public void deleteTaskById(Long taskId) {
+    User authenticatedUser = userService.getAuthenticatedUser();
     Task task = taskRepository.findById(taskId)
-      .orElseThrow(() -> new RuntimeException("Task not found"));
-
+      .orElseThrow(() -> new TaskNotFoundException("Task with id " + taskId + " not found"));
     // Check if the task belongs to a project
     if (task.getProject() != null) {
       // Allow deletion if the user is the project creator
-      if (task.getProject().getCreator().getId().equals(userId)) {
+      if (task.getProject().getCreator().getId().equals(authenticatedUser.getId())) {
         taskRepository.deleteById(taskId);
       } else {
-        // throw new UnauthorizedActionException("You are not authorized to delete this project task");
+        throw new UnauthorizedActionException("You are not authorized to delete this project task");
       }
     } else {
       // If the task is a personal task, check if the user is the creator
-      if (task.getUser() != null && task.getUser().getId().equals(userId)) {
+      if (task.getUser() != null && task.getUser().getId().equals(authenticatedUser.getId())) {
         taskRepository.deleteById(taskId);
-      } else {
-        // throw new UnauthorizedActionException("You are not authorized to delete this personal task");
+      }
+      else {
+        throw new UnauthorizedActionException("You are not authorized to delete this personal task");
       }
     }
   }
 
   @Transactional
+  @Override
   public TaskDto createTaskForProject(Long projectId, TaskDto taskDto, Long userId) throws Error {
     if (!isProjectCreator(projectId, userId)) {
-      throw new Error("Only the project creator can add tasks");
+      throw new UnauthorizedActionException("Only the project creator can add tasks");
     }
 
     Task task = taskMapper.toEntity(taskDto);  // Map to entity
@@ -105,34 +109,36 @@ public class TaskServiceImpl implements TaskService {
   }
 
   @Transactional
-  public void assignTaskToUser(Long taskId, Long userId, Long assignerId) {
+  @Override
+  public void assignTaskToUser(Long taskId, Long userId) {
+    User authenticatedUser = userService.getAuthenticatedUser();
     Task task = taskRepository.findTaskWithProjectAndUserById(taskId)
       .orElseThrow(
-        //() -> new TaskNotFoundException("Task not found")
+        () -> new TaskNotFoundException("Task with id " + taskId + " not found")
       );
     Project project = task.getProject();
     if (project == null) {
-      //throw new ProjectNotFoundException("Task is not associated with any project.");
+      throw new TaskNoAssociatedWithAnyProjectException("Task is not associated with any project.");
     }
 
-    if (!isProjectCreator(task.getProject().getId(), assignerId)) {
-      //throw new UnauthorizedActionException("Only the project creator can assign tasks");
+    if (!isProjectCreator(project.getId(), authenticatedUser.getId())) {
+      throw new UnauthorizedActionException("Only the project creator can assign tasks");
     }
-    if(task.getProject().getTeam()==null){
-      //throw new ProjectHasNoTeamException("")
+    if(project.getTeam()==null){
+      throw new ProjectHasNoTeamException("Project has no team yet");
+    }
+    if(task.getUser()!=null){
+      throw new TaskAlreadyAssignedException("Task is already assigned ");
     }
 
     User user = userService.findUserById(userId);
-    if(user.getTasks().contains(task)){
-      //Task is already assigned
-    }
 
-    if (!teamService.isUserPartOfTeam(userId, task.getProject().getTeam().getId())) {
-      //throw new UnauthorizedActionException("User is not part of the project team");
+    if (!teamService.isUserPartOfTeam(userId, project.getTeam().getId())) {
+      throw new UserNotPartOfTaskProjectTeamException("User is not part of the team of the project of the task");
     }
 
     task.setUser(user);
-    task.setTeam(task.getProject().getTeam());
+    task.setTeam(project.getTeam());
     taskRepository.save(task);
   }
 
@@ -147,7 +153,7 @@ public class TaskServiceImpl implements TaskService {
   private boolean isProjectCreator(Long projectId, Long userId) {
     ProjectDto project = projectService.findProjectById(projectId)
       .orElseThrow(
-        //() -> new ProjectNotFoundException("Project not found")
+        () -> new ProjectNotFoundException("Project not found")
       );
       return project.getOwner().getId().equals(userId);
   }
