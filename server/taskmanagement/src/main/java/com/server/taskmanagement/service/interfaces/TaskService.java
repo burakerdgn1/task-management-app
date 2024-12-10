@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TaskService {
-  TaskDto createTask(TaskDto task);
+  TaskDto createPersonalTask(TaskDto task);
 
   Optional<TaskDto> findTaskById(Long id);
 
@@ -15,11 +15,11 @@ public interface TaskService {
 
   TaskDto updateTask(Long id, TaskDto updatedTaskDto);
 
-  void deleteTaskById(Long taskId, Long userId);
+  void deleteTaskById(Long taskId);
 
   TaskDto createTaskForProject(Long projectId, TaskDto taskDto, Long userId);
 
-  void assignTaskToUser(Long taskId, Long userId, Long assignerId);
+  void assignTaskToUser(Long taskId, Long userId);
 
   List<TaskDto> getPersonalTasksForUser(Long userId);
 }

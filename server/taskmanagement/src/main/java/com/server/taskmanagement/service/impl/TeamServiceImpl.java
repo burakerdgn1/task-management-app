@@ -4,6 +4,9 @@ import com.server.taskmanagement.dto.TeamDto;
 import com.server.taskmanagement.entity.Project;
 import com.server.taskmanagement.entity.Team;
 import com.server.taskmanagement.entity.User;
+import com.server.taskmanagement.exception.auth.UnauthorizedActionException;
+import com.server.taskmanagement.exception.project.TeamAlreadyAssignedException;
+import com.server.taskmanagement.exception.team.TeamNotFoundException;
 import com.server.taskmanagement.mappers.ProjectMapper;
 import com.server.taskmanagement.mappers.TeamMapper;
 import com.server.taskmanagement.repository.ProjectRepository;
@@ -29,6 +32,7 @@ import java.util.Set;
 
 public class TeamServiceImpl implements TeamService {
 
+
   private final TeamRepository teamRepository;
   private final UserTeamServiceImpl userTeamService;
   private final UserServiceImpl userService;
@@ -43,17 +47,12 @@ public class TeamServiceImpl implements TeamService {
 
   @Transactional
   @Override
-  public Optional<TeamDto> findTeamById(Long id) {
-    Optional<Team> team = teamRepository.findById(id);
-    User authenticatedUser = userService.getAuthenticatedUser();
-    if(team.isEmpty()) {
-      //exception
-    }
-    TeamDto teamDto = teamMapper.toDto(team.get());
-    if (!teamDto.getId().equals(authenticatedUser.getId())) {
-      //exception
-    }
-    return team.map(teamMapper::toDto);
+  public TeamDto findTeamById(Long id) {
+    Team team = teamRepository.findById(id).orElseThrow(
+      ()->new TeamNotFoundException("Team with id:" + id + " not found ")
+    );
+
+    return teamMapper.toDto(team);
   }
 
   @Override
@@ -69,8 +68,15 @@ public class TeamServiceImpl implements TeamService {
   @Override
   @Transactional
   public TeamDto createTeamForProject(ProjectDto projectDto, TeamDto teamDto) {
-    Team team = teamMapper.toEntity(teamDto);
+    User authenticatedUser = userService.getAuthenticatedUser();
+    if (!projectDto.getOwner().getId().equals(authenticatedUser.getId())) {
+      throw new UnauthorizedActionException("Only project creator can create teams for this project");
+    }
     Project project=projectMapper.toProject(projectDto);
+    if(project.getTeam()!=null){
+      throw new TeamAlreadyAssignedException("Project already has a team assigned");
+    }
+    Team team = teamMapper.toEntity(teamDto);
     team.setCreator(project.getCreator()); // Assign team creator as the project creator
     team.getProjects().add(project); // Assign team to project
     project.setTeam(team);
@@ -78,18 +84,16 @@ public class TeamServiceImpl implements TeamService {
     return teamMapper.toDto(savedTeam);
   }
 
+  @Transactional
   @Override
   public TeamDto updateTeam(Long id, TeamDto teamDto) {
-    Optional<Team> existingTeam = teamRepository.findById(id);
-    if (existingTeam.isPresent()) {
-      Team updatedTeam = existingTeam.get();
-      updatedTeam.setName(teamDto.getName());
-      Team savedTeam = teamRepository.save(updatedTeam);
-      return teamMapper.toDto(savedTeam);
-    } else {
-      //throw new IllegalArgumentException("Team with ID " + id + " not found.");
-      return null;
-    }
+    teamRepository.findById(id).orElseThrow(
+      ()->new TeamNotFoundException("Team with id:" + id + " not found ")
+    );
+    Team teamToUpdate = teamMapper.toEntity(teamDto);
+    Team savedTeam = teamRepository.save(teamToUpdate);
+    return teamMapper.toDto(savedTeam);
+
   }
 
   /*
@@ -102,16 +106,11 @@ public class TeamServiceImpl implements TeamService {
   @Override
   public void deleteTeam(Long id) {
 
-    Optional<TeamDto> team = findTeamById(id);
-    if (team.isEmpty()) {
-      //...
-    }
+    TeamDto team = findTeamById(id);
     User authenticatedUser = userService.getAuthenticatedUser();
-
-    if (!team.get().getOwner().getId().equals(authenticatedUser.getId())) {
-      //exception...
+    if (!team.getOwner().getId().equals(authenticatedUser.getId())) {
+      throw new UnauthorizedActionException("Only the creator can delete a team");
     }
-
     teamRepository.deleteById(id);
 
   }

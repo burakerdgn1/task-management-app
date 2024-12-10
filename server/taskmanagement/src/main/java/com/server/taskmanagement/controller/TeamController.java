@@ -43,7 +43,7 @@ public class TeamController {
 
   @GetMapping("/{teamId}")
   public ResponseEntity<TeamDto> getTeam(@PathVariable Long teamId) {
-    Optional<TeamDto> teamDto = teamService.findTeamById(teamId);
+    TeamDto teamDto = teamService.findTeamById(teamId);
 
     /*
     UserDto ownerDto = new UserDto();
@@ -51,7 +51,7 @@ public class TeamController {
     ownerDto.setUsername(teamDto.getOwner().getUsername());
     teamDto.setOwner(ownerDto);*/
 
-    return ResponseEntity.ok(teamDto.get());
+    return ResponseEntity.ok(teamDto);
   }
 
   @DeleteMapping("/{teamId}")

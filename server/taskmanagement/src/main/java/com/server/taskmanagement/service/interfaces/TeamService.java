@@ -11,7 +11,7 @@ import java.util.Optional;
 public interface TeamService {
   List<TeamDto> getAllTeams();
 
-  Optional<TeamDto> findTeamById(Long id);
+  TeamDto findTeamById(Long id);
 
   TeamDto createTeam(TeamDto team);
 

@@ -35,7 +35,7 @@ public class TaskController {
   // Create a personal task (independent from any project)
   @PostMapping("/personal")
   public ResponseEntity<TaskDto> createPersonalTask(@RequestBody TaskDto taskDto) {
-    TaskDto savedTask = taskService.createTask(taskDto);
+    TaskDto savedTask = taskService.createPersonalTask(taskDto);
     return ResponseEntity.ok(savedTask);
   }
 
@@ -44,7 +44,7 @@ public class TaskController {
   public ResponseEntity<Void> assignTaskToUser(@PathVariable Long taskId, @PathVariable Long userId) {
     User authenticatedUser = userService.getAuthenticatedUser();
 
-    taskService.assignTaskToUser(taskId, userId, authenticatedUser.getId());
+    taskService.assignTaskToUser(taskId, userId);
 
     return ResponseEntity.ok().build();
   }
@@ -59,9 +59,8 @@ public class TaskController {
 
   @DeleteMapping("/{taskId}")
   public ResponseEntity<Void> deleteTask(@PathVariable Long taskId) {
-    User authenticatedUser = userService.getAuthenticatedUser();
 
-    taskService.deleteTaskById(taskId, authenticatedUser.getId());
+    taskService.deleteTaskById(taskId);
 
     return ResponseEntity.noContent().build(); // HTTP 204 No Content
   }

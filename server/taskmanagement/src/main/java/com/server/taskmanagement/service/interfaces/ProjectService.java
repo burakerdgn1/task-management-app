@@ -16,7 +16,7 @@ public interface ProjectService {
 
   List<Project> findAllProjects();
 
-  Project updateProject(Long id, Project updatedProject);
+  ProjectDto updateProject(Long id, ProjectDto updatedProject);
 
   void deleteProject(Long id);
 
